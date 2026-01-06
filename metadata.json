@@ -1,0 +1,7 @@
+{
+  "name": "TREE BRAZILIAN JIU JITSU - Gestão",
+  "description": "Sistema completo para gestão de academia de Jiu-Jitsu com sincronização entre dispositivos e modo totem.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
