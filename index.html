@@ -12,19 +12,44 @@
         /* Ocultar barra de rolagem em modo totem */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Previne o scroll elástico no iOS/iPadOS e garante tela cheia */
+        html, body {
+            overflow: hidden;
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #0f172a; /* bg-slate-900 */
+        }
+        #root {
+            height: 100%;
+            width: 100%;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            background-color: #f8fafc; /* bg-slate-50 */
+        }
     </style>
-<script type="importmap">
+    <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom": "https://esm.sh/react-dom@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "react-router-dom": "https://esm.sh/react-router-dom@6.11.2?deps=react@18.2.0,react-dom@18.2.0",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react-router-dom": "https://esm.sh/react-router-dom@^7.11.0"
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
 </head>
-<body class="bg-slate-50 text-slate-900">
-    <div id="root"></div>
+<body>
+    <div id="root">
+        <div class="min-h-screen flex flex-col items-center justify-center bg-slate-900">
+            <div class="text-white font-black animate-pulse uppercase tracking-widest mb-4">TREE BRAZILIAN JIU JITSU</div>
+            <div class="text-blue-500 text-[10px] font-black uppercase tracking-tighter">Sincronizando tatame...</div>
+        </div>
+    </div>
+    <script type="module" src="index.tsx"></script>
 </body>
 </html>

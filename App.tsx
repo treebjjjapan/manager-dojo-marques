@@ -1,17 +1,17 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Sidebar from './components/Sidebar';
-import Header from './components/Header';
-import Dashboard from './pages/Dashboard';
-import Students from './pages/Students';
-import Financial from './pages/Financial';
-import Attendance from './pages/Attendance';
-import Graduation from './pages/Graduation';
-import Totem from './pages/Totem';
-import Settings from './pages/Settings';
-import Login from './pages/Login';
-import { User } from './types';
+import Sidebar from './components/Sidebar.tsx';
+import Header from './components/Header.tsx';
+import Dashboard from './pages/Dashboard.tsx';
+import Students from './pages/Students.tsx';
+import Financial from './pages/Financial.tsx';
+import Attendance from './pages/Attendance.tsx';
+import Graduation from './pages/Graduation.tsx';
+import Totem from './pages/Totem.tsx';
+import Settings from './pages/Settings.tsx';
+import Login from './pages/Login.tsx';
+import { User } from './types.ts';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(() => {
@@ -36,10 +36,7 @@ const App: React.FC = () => {
   return (
     <HashRouter>
       <Routes>
-        {/* Modo Totem é independente de layout */}
         <Route path="/totem" element={<Totem />} />
-        
-        {/* Layout do Painel */}
         <Route path="/*" element={
           <div className="flex min-h-screen bg-slate-50">
             <Sidebar user={user} onLogout={handleLogout} />

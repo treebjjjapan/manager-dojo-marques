@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { User } from '../types';
+import { User } from '../types.ts';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -32,7 +32,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
              <span className="text-3xl font-black tracking-tighter">TREE <span className="text-blue-400">BJJ</span></span>
           </div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none uppercase">Acesso Restrito</h1>
-          <p className="text-slate-400 mt-2 font-medium">Gestão de Tatame</p>
+          <p className="text-slate-400 mt-2 font-medium uppercase text-xs tracking-widest">Gestão de Tatame</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

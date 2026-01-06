@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { User } from '../types';
+import { User } from '../types.ts';
 
 interface SidebarProps {
   user: User;

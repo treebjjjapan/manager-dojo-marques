@@ -1,12 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { db } from '../db';
-import { MonthlyFee, Student, Plan, PaymentMethod } from '../types';
+import { db } from '../db.ts';
+import { MonthlyFee, Student, Plan, PaymentMethod } from '../types.ts';
 
 const Financial: React.FC = () => {
   const [fees, setFees] = useState<MonthlyFee[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
-  const [plans, setPlans] = useState<Plan[]>(db.getSettings().plans);
   const [filter, setFilter] = useState<'ALL' | 'OVERDUE' | 'PAID'>('ALL');
 
   useEffect(() => {
@@ -44,7 +43,7 @@ const Financial: React.FC = () => {
   return (
     <div className="space-y-6 pb-20 md:pb-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h1 className="text-2xl font-bold text-slate-900">Financeiro</h1>
+        <h1 className="text-2xl font-bold text-slate-900 uppercase">Financeiro</h1>
         <div className="flex gap-2">
           <button onClick={() => setFilter('ALL')} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${filter === 'ALL' ? 'bg-slate-900 text-white shadow-lg' : 'bg-white text-slate-500 border border-slate-200'}`}>TODOS</button>
           <button onClick={() => setFilter('PAID')} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${filter === 'PAID' ? 'bg-green-600 text-white shadow-lg' : 'bg-white text-slate-500 border border-slate-200'}`}>PAGOS</button>
@@ -54,11 +53,11 @@ const Financial: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-green-50 border border-green-100 p-6 rounded-3xl">
-          <span className="text-green-600 text-xs font-black uppercase tracking-widest">Total Recebido (Histórico)</span>
+          <span className="text-green-600 text-[10px] font-black uppercase tracking-widest">Total Recebido (Histórico)</span>
           <p className="text-3xl font-black text-green-900 mt-1">¥ {totalReceived.toLocaleString('ja-JP')}</p>
         </div>
         <div className="bg-red-50 border border-red-100 p-6 rounded-3xl">
-          <span className="text-red-600 text-xs font-black uppercase tracking-widest">Pendente / Vencido</span>
+          <span className="text-red-600 text-[10px] font-black uppercase tracking-widest">Pendente / Vencido</span>
           <p className="text-3xl font-black text-red-900 mt-1">¥ {totalPending.toLocaleString('ja-JP')}</p>
         </div>
       </div>
@@ -94,9 +93,9 @@ const Financial: React.FC = () => {
                   <td className="px-6 py-4 text-center">
                     {f.status !== 'PAID' && (
                       <div className="flex justify-center gap-1">
-                        <button onClick={() => handleReceive(f, 'CASH')} className="p-2 bg-slate-100 hover:bg-green-600 hover:text-white rounded-lg transition-all text-xs font-bold" title="Receber em Dinheiro">💵</button>
-                        <button onClick={() => handleReceive(f, 'PIX')} className="p-2 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-lg transition-all text-xs font-bold" title="Receber via PIX">📱</button>
-                        <button onClick={() => handleReceive(f, 'CARD')} className="p-2 bg-slate-100 hover:bg-purple-600 hover:text-white rounded-lg transition-all text-xs font-bold" title="Receber em Cartão">💳</button>
+                        <button onClick={() => handleReceive(f, 'CASH')} className="p-2 bg-slate-100 hover:bg-green-600 hover:text-white rounded-lg transition-all text-xs font-bold">💵</button>
+                        <button onClick={() => handleReceive(f, 'PIX')} className="p-2 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-lg transition-all text-xs font-bold">📱</button>
+                        <button onClick={() => handleReceive(f, 'CARD')} className="p-2 bg-slate-100 hover:bg-purple-600 hover:text-white rounded-lg transition-all text-xs font-bold">💳</button>
                       </div>
                     )}
                     {f.status === 'PAID' && (
@@ -107,7 +106,7 @@ const Financial: React.FC = () => {
               ))}
               {filteredFees.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 italic">Nenhum registro encontrado.</td>
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 italic uppercase text-[10px] tracking-widest font-bold">Nenhum registro encontrado.</td>
                 </tr>
               )}
             </tbody>

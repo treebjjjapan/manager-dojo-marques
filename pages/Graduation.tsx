@@ -1,18 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
-import { db } from '../db';
-import { Student, Belt } from '../types';
+import { db } from '../db.ts';
+import { Student, Belt } from '../types.ts';
 
 const Graduation: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [editing, setEditing] = useState<Student | null>(null);
+  const [belts, setBelts] = useState<string[]>(db.getSettings().belts);
 
   useEffect(() => {
     setStudents(db.getStudents().filter(s => s.status === 'ACTIVE'));
+    setBelts(db.getSettings().belts);
   }, []);
 
   const updateGraduation = (studentId: string, belt: Belt, stripes: number) => {
-    const updated = students.map(s => {
+    const updated = db.getStudents().map(s => {
       if (s.id === studentId) {
         return {
           ...s,
@@ -32,7 +34,7 @@ const Graduation: React.FC = () => {
       }
       return s;
     });
-    setStudents(updated);
+    setStudents(updated.filter(s => s.status === 'ACTIVE'));
     db.saveStudents(updated);
     setEditing(null);
   };
@@ -40,8 +42,8 @@ const Graduation: React.FC = () => {
   return (
     <div className="space-y-6">
        <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-slate-900">Graduação</h1>
-        <p className="text-xs text-slate-500">Mantenha os graus e faixas atualizados</p>
+        <h1 className="text-2xl font-bold text-slate-900 uppercase">Graduação</h1>
+        <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Controle de Graus</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -52,13 +54,13 @@ const Graduation: React.FC = () => {
                 {s.photo ? <img src={s.photo} className="w-full h-full object-cover" /> : <span className="flex items-center justify-center h-full text-2xl opacity-10">🥋</span>}
               </div>
               <div className="min-w-0">
-                <h3 className="font-bold text-slate-900 truncate">{s.name}</h3>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Desde {new Date(s.lastGraduationUpdate).toLocaleDateString()}</p>
+                <h3 className="font-bold text-slate-900 truncate uppercase text-sm">{s.name}</h3>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Última: {new Date(s.lastGraduationUpdate).toLocaleDateString()}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2 mb-4">
-              <span className={`text-xs px-3 py-1 rounded-full font-black uppercase border shadow-sm ${
+              <span className={`text-[10px] px-3 py-1 rounded-full font-black uppercase border shadow-sm ${
                 s.belt === 'BRANCA' ? 'bg-white text-slate-900 border-slate-200' :
                 s.belt === 'AZUL' ? 'bg-blue-600 text-white border-blue-500' :
                 s.belt === 'ROXA' ? 'bg-purple-600 text-white border-purple-500' :
@@ -76,7 +78,7 @@ const Graduation: React.FC = () => {
 
             <button 
               onClick={() => setEditing(s)}
-              className="w-full py-3 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl text-xs font-bold uppercase tracking-widest transition-all"
+              className="w-full py-3 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
             >
               PROMOVER ALUNO
             </button>
@@ -88,23 +90,23 @@ const Graduation: React.FC = () => {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
            <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl">
               <h2 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">Promover Aluno</h2>
-              <p className="text-sm text-slate-500 mb-6">{editing.name}</p>
+              <p className="text-sm text-slate-500 mb-6 font-bold uppercase">{editing.name}</p>
 
               <div className="space-y-4">
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Nova Faixa</label>
                   <select 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold uppercase text-xs"
                     defaultValue={editing.belt}
                     id="newBelt"
                   >
-                    {['BRANCA', 'AZUL', 'ROXA', 'MARROM', 'PRETA'].map(b => <option key={b} value={b}>{b}</option>)}
+                    {belts.map(b => <option key={b} value={b}>{b}</option>)}
                   </select>
                 </div>
                 <div>
                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Novos Graus</label>
                    <select 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-xs"
                     defaultValue={editing.stripes}
                     id="newStripes"
                   >
@@ -114,14 +116,14 @@ const Graduation: React.FC = () => {
               </div>
 
               <div className="flex gap-2 mt-8">
-                 <button onClick={() => setEditing(null)} className="flex-1 py-4 text-slate-500 font-bold">Cancelar</button>
+                 <button onClick={() => setEditing(null)} className="flex-1 py-4 text-slate-500 font-bold uppercase text-xs">Cancelar</button>
                  <button 
                     onClick={() => {
                       const belt = (document.getElementById('newBelt') as HTMLSelectElement).value as Belt;
                       const stripes = parseInt((document.getElementById('newStripes') as HTMLSelectElement).value);
                       updateGraduation(editing.id, belt, stripes);
                     }}
-                    className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg shadow-blue-900/10"
+                    className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs shadow-lg"
                   >
                     CONFIRMAR
                   </button>

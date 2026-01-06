@@ -1,5 +1,5 @@
 
-import { Student, MonthlyFee, Attendance, AppSettings, SyncData } from './types';
+import { Student, MonthlyFee, Attendance, AppSettings, SyncData } from './types.ts';
 
 const DB_KEYS = {
   STUDENTS: 'tree_bjj_students',
@@ -12,6 +12,7 @@ const DB_KEYS = {
 const DEFAULT_SETTINGS: AppSettings = {
   academyName: "TREE BRAZILIAN JIU JITSU",
   allowCheckinWithOverdue: true,
+  belts: ['BRANCA', 'AZUL', 'ROXA', 'MARROM', 'PRETA'],
   plans: [
     { id: '1', name: 'Plano Adulto', price: 10000 },
     { id: '2', name: 'Plano Kids', price: 8000 }
@@ -22,20 +23,30 @@ const DEFAULT_SETTINGS: AppSettings = {
   ]
 };
 
+const safeParse = <T>(key: string, fallback: T): T => {
+  try {
+    const item = localStorage.getItem(key);
+    if (!item) return fallback;
+    return JSON.parse(item);
+  } catch (e) {
+    console.error(`Erro ao ler ${key}:`, e);
+    return fallback;
+  }
+};
+
 export const db = {
-  getStudents: (): Student[] => JSON.parse(localStorage.getItem(DB_KEYS.STUDENTS) || '[]'),
+  getStudents: (): Student[] => safeParse(DB_KEYS.STUDENTS, []),
   saveStudents: (data: Student[]) => localStorage.setItem(DB_KEYS.STUDENTS, JSON.stringify(data)),
   
-  getFees: (): MonthlyFee[] => JSON.parse(localStorage.getItem(DB_KEYS.FEES) || '[]'),
+  getFees: (): MonthlyFee[] => safeParse(DB_KEYS.FEES, []),
   saveFees: (data: MonthlyFee[]) => localStorage.setItem(DB_KEYS.FEES, JSON.stringify(data)),
   
-  getAttendance: (): Attendance[] => JSON.parse(localStorage.getItem(DB_KEYS.ATTENDANCE) || '[]'),
+  getAttendance: (): Attendance[] => safeParse(DB_KEYS.ATTENDANCE, []),
   saveAttendance: (data: Attendance[]) => localStorage.setItem(DB_KEYS.ATTENDANCE, JSON.stringify(data)),
   
-  getSettings: (): AppSettings => JSON.parse(localStorage.getItem(DB_KEYS.SETTINGS) || JSON.stringify(DEFAULT_SETTINGS)),
+  getSettings: (): AppSettings => safeParse(DB_KEYS.SETTINGS, DEFAULT_SETTINGS),
   saveSettings: (data: AppSettings) => localStorage.setItem(DB_KEYS.SETTINGS, JSON.stringify(data)),
 
-  // Sincronização
   exportSyncToken: (): string => {
     const data: SyncData = {
       students: db.getStudents(),
@@ -45,12 +56,17 @@ export const db = {
       version: 1,
       timestamp: Date.now()
     };
-    return btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+    const json = JSON.stringify(data);
+    return btoa(encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (match, p1) => 
+      String.fromCharCode(parseInt(p1, 16))
+    ));
   },
 
   importSyncToken: (token: string): boolean => {
     try {
-      const decoded = decodeURIComponent(escape(atob(token)));
+      const decoded = decodeURIComponent(atob(token).split('').map(c => 
+        '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+      ).join(''));
       const data: SyncData = JSON.parse(decoded);
       if (data.students) db.saveStudents(data.students);
       if (data.monthlyFees) db.saveFees(data.monthlyFees);
@@ -58,7 +74,7 @@ export const db = {
       if (data.settings) db.saveSettings(data.settings);
       return true;
     } catch (e) {
-      console.error("Erro ao importar token", e);
+      console.error("Erro ao importar token:", e);
       return false;
     }
   }

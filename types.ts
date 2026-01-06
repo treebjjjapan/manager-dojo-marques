@@ -8,7 +8,7 @@ export interface User {
   role: UserRole;
 }
 
-export type Belt = 'BRANCA' | 'AZUL' | 'ROXA' | 'MARROM' | 'PRETA';
+export type Belt = string;
 
 export interface GraduationHistory {
   date: string;
@@ -70,6 +70,7 @@ export interface AppSettings {
   academyName: string;
   plans: Plan[];
   schedules: Schedule[];
+  belts: string[];
   allowCheckinWithOverdue: boolean;
 }
 
