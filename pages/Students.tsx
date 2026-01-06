@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../db.ts';
-import { Student, Belt } from '../types.ts';
+import { Student } from '../types.ts';
 
 const Students: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
@@ -31,6 +31,7 @@ const Students: React.FC = () => {
     } catch (err) {
       console.error("Erro ao acessar câmera", err);
       setIsCapturing(false);
+      alert("Não foi possível acessar a câmera. Verifique as permissões.");
     }
   };
 
@@ -41,13 +42,30 @@ const Students: React.FC = () => {
       canvas.height = videoRef.current.videoHeight;
       const ctx = canvas.getContext('2d');
       ctx?.drawImage(videoRef.current, 0, 0);
-      const photo = canvas.toDataURL('image/jpeg');
+      const photo = canvas.toDataURL('image/jpeg', 0.7); // Qualidade reduzida para economizar espaço
       const stream = videoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach(track => track.stop());
       setIsCapturing(false);
       return photo;
     }
     return '';
+  };
+
+  const handleDelete = (id: string, name: string) => {
+    if (window.confirm(`AVISO CRÍTICO: Deseja realmente excluir o aluno "${name.toUpperCase()}"? \n\nIsso apagará permanentemente todo o histórico de mensalidades e presenças deste aluno.`)) {
+      const newStudents = students.filter(s => s.id !== id);
+      setStudents(newStudents);
+      db.saveStudents(newStudents);
+      
+      // Cleanup associated data
+      const allFees = db.getFees();
+      db.saveFees(allFees.filter(f => f.studentId !== id));
+      
+      const allAttendance = db.getAttendance();
+      db.saveAttendance(allAttendance.filter(a => a.studentId !== id));
+      
+      alert("Aluno e dados vinculados removidos com sucesso.");
+    }
   };
 
   const handleSave = (e: React.FormEvent<HTMLFormElement>) => {
@@ -65,11 +83,11 @@ const Students: React.FC = () => {
       status: (formData.get('status') as 'ACTIVE' | 'INACTIVE') || 'ACTIVE',
       notes: formData.get('notes') as string,
       photo: photo,
-      lastGraduationUpdate: new Date().toISOString(),
+      lastGraduationUpdate: editingStudent?.lastGraduationUpdate || new Date().toISOString(),
       graduationHistory: editingStudent?.graduationHistory || []
     };
 
-    const newStudents = editingStudent 
+    const newStudents = editingStudent && students.some(s => s.id === editingStudent.id)
       ? students.map(s => s.id === editingStudent.id ? student : s)
       : [...students, student];
 
@@ -120,10 +138,18 @@ const Students: React.FC = () => {
                   <span className="text-[10px] text-slate-500 font-black uppercase tracking-tighter bg-slate-100 px-2 py-0.5 rounded-full">{s.stripes} Graus</span>
                 </div>
               </div>
-              <button onClick={() => { setEditingStudent(s); setShowModal(true); }} className="absolute top-4 right-4 p-2 text-slate-200 hover:text-blue-600 transition-colors">✏️</button>
+              <div className="absolute top-4 right-4 flex gap-2">
+                <button onClick={() => { setEditingStudent(s); setShowModal(true); }} className="p-2 text-slate-300 hover:text-blue-600 transition-colors">✏️</button>
+                <button onClick={() => handleDelete(s.id, s.name)} className="p-2 text-slate-300 hover:text-red-500 transition-colors">🗑️</button>
+              </div>
             </div>
           </div>
         ))}
+        {filteredStudents.length === 0 && (
+          <div className="col-span-full py-20 text-center">
+            <p className="text-slate-400 italic uppercase text-xs font-bold tracking-widest">Nenhum aluno encontrado</p>
+          </div>
+        )}
       </div>
 
       {showModal && (

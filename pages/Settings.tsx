@@ -1,19 +1,22 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { db } from '../db.ts';
 import { AppSettings, Plan, Schedule } from '../types.ts';
+import { QRCodeSVG } from 'qrcode.react';
+import { Html5QrcodeScanner } from 'html5-qrcode';
 
 const Settings: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>(db.getSettings());
   const [syncToken, setSyncToken] = useState('');
+  const [showQR, setShowQR] = useState(false);
   const [activeTab, setActiveTab] = useState<'GENERAL' | 'PLANS' | 'SCHEDULES' | 'GRADUATION' | 'SYNC'>('GENERAL');
+  const [isScanning, setIsScanning] = useState(false);
 
   const handleSave = () => {
     db.saveSettings(settings);
     alert('Configurações salvas com sucesso!');
   };
 
-  // Funções para Planos
   const addPlan = () => {
     const newPlan: Plan = { id: Date.now().toString(), name: 'Novo Plano', price: 0 };
     setSettings({ ...settings, plans: [...settings.plans, newPlan] });
@@ -23,7 +26,6 @@ const Settings: React.FC = () => {
     setSettings({ ...settings, plans: settings.plans.filter(p => p.id !== id) });
   };
 
-  // Funções para Horários
   const addSchedule = () => {
     const newSch: Schedule = { id: Date.now().toString(), dayOfWeek: 'Segunda', time: '00:00', className: 'Nova Aula' };
     setSettings({ ...settings, schedules: [...settings.schedules, newSch] });
@@ -33,7 +35,6 @@ const Settings: React.FC = () => {
     setSettings({ ...settings, schedules: settings.schedules.filter(s => s.id !== id) });
   };
 
-  // Funções para Graduação
   const addBelt = () => {
     const beltName = prompt('Nome da nova faixa (ex: CINZA):');
     if (beltName) {
@@ -49,17 +50,38 @@ const Settings: React.FC = () => {
   const handleExport = () => {
     const token = db.exportSyncToken();
     setSyncToken(token);
-    navigator.clipboard.writeText(token);
-    alert('Código de Sincronização copiado para a área de transferência!');
+    setShowQR(true);
+    // Tenta copiar para o clipboard se possível
+    try {
+      navigator.clipboard.writeText(token);
+    } catch(e) {}
+  };
+
+  const startScanner = () => {
+    setIsScanning(true);
+    setTimeout(() => {
+      const scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 }, false);
+      scanner.render((decodedText) => {
+        setSyncToken(decodedText);
+        scanner.clear();
+        setIsScanning(false);
+      }, (error) => {
+        // Ignora erros de leitura constantes
+      });
+    }, 100);
   };
 
   const handleImport = () => {
+    if (!syncToken) {
+      alert("Insira ou escaneie um token primeiro.");
+      return;
+    }
     if (window.confirm("Isso apagará todos os dados locais para sincronizar com o novo dispositivo. Continuar?")) {
       if (db.importSyncToken(syncToken)) {
         alert('Sincronização realizada! Reiniciando...');
         window.location.reload();
       } else {
-        alert('Token inválido.');
+        alert('Token inválido ou muito grande para o processamento.');
       }
     }
   };
@@ -222,7 +244,6 @@ const Settings: React.FC = () => {
                   </div>
                 ))}
               </div>
-              <p className="text-[10px] text-slate-400 font-medium italic">Nota: As faixas serão exibidas nos menus de cadastro e promoção de alunos.</p>
             </div>
           )}
 
@@ -230,18 +251,48 @@ const Settings: React.FC = () => {
             <div className="max-w-md mx-auto space-y-8 text-center py-6">
               <div className="space-y-2">
                 <span className="text-5xl">📱↔️💻</span>
-                <h2 className="text-lg font-black text-slate-900 uppercase mt-4">Sincronização entre Aparelhos</h2>
-                <p className="text-xs text-slate-500 leading-relaxed">Gere o código no PC e cole no seu iPad para carregar todos os dados instantaneamente.</p>
+                <h2 className="text-lg font-black text-slate-900 uppercase mt-4">Sincronização Nuvem</h2>
+                <p className="text-xs text-slate-500 leading-relaxed">Transfira dados entre PC e iPad via QR Code ou Token.</p>
               </div>
+
+              {showQR && (
+                <div className="bg-white p-6 rounded-3xl border-2 border-slate-100 flex flex-col items-center animate-in fade-in zoom-in">
+                  <div className="bg-white p-4 rounded-2xl shadow-inner mb-4">
+                    <QRCodeSVG value={syncToken} size={256} level="L" includeMargin={true} />
+                  </div>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase mb-4">Escaneie este código no outro aparelho</p>
+                  <button onClick={() => setShowQR(false)} className="text-blue-600 font-black text-[10px] uppercase">Fechar QR Code</button>
+                </div>
+              )}
+
+              {isScanning && (
+                <div className="fixed inset-0 bg-slate-900/95 z-[100] p-6 flex flex-col items-center justify-center">
+                  <div id="reader" className="w-full max-w-sm rounded-3xl overflow-hidden bg-black border-4 border-blue-600 shadow-2xl"></div>
+                  <button onClick={() => setIsScanning(false)} className="mt-8 px-8 py-4 bg-white text-slate-900 rounded-full font-black uppercase tracking-widest">Cancelar Leitura</button>
+                </div>
+              )}
+
               <div className="space-y-4">
-                <button onClick={handleExport} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-900/10 transition-all">GERAR TOKEN DE EXPORTAÇÃO</button>
+                <div className="grid grid-cols-2 gap-3">
+                   <button onClick={handleExport} className="py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-700 shadow-lg transition-all">GERAR QR CODE</button>
+                   <button onClick={startScanner} className="py-4 bg-green-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-green-700 shadow-lg transition-all">ESCANEARE QR</button>
+                </div>
+
+                <div className="relative pt-6">
+                   <div className="absolute inset-x-0 top-3 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
+                   <div className="relative flex justify-center text-[10px] font-black uppercase text-slate-300"><span className="bg-white px-4">OU VIA TEXTO</span></div>
+                </div>
+
                 <textarea 
                   className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 font-mono text-[10px] h-32 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
-                  placeholder="Cole aqui o token de outro aparelho..."
+                  placeholder="Cole aqui o token de outro aparelho se o QR não funcionar..."
                   value={syncToken}
                   onChange={(e) => setSyncToken(e.target.value)}
                 />
-                <button onClick={handleImport} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all">IMPORTAR DADOS DA NUVEM</button>
+                
+                <button onClick={handleImport} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl">IMPORTAR DADOS AGORA</button>
+                
+                <p className="text-[9px] text-slate-400 font-bold uppercase italic">Dica: QR Codes funcionam melhor com poucos alunos. Para bases grandes com muitas fotos, prefira o Token de Texto.</p>
               </div>
             </div>
           )}
@@ -252,7 +303,7 @@ const Settings: React.FC = () => {
                 onClick={handleSave}
                 className="w-full py-5 bg-slate-900 text-white rounded-[32px] font-black uppercase tracking-widest hover:bg-slate-800 shadow-2xl active:scale-[0.98] transition-all"
               >
-                SALVAR TUDO AGORA
+                SALVAR CONFIGURAÇÕES
               </button>
             </div>
           )}
